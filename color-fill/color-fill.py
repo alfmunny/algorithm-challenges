@@ -1,5 +1,6 @@
 import unittest
 
+
 class BoardSolution:
 
   def __init__(self, board, color):
@@ -80,7 +81,6 @@ class BoardSolution:
       self.dfs(i, j+1, original_color, color)
       self.dfs(i-1, j, original_color, color)
       self.dfs(i, j-1, original_color, color)
-
 
   def print(self, board):
     print("========= Move ", self.move)
