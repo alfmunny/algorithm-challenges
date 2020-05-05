@@ -1,11 +1,6 @@
 # Color Fill
 
-## Problem
-We have a board of N * N, a set of colors M.
-
-Every time you can pick a new color from M to paint on the origin at index [0][0], the color will flood the tiles, which have the same color as the color of the origin.
-
-How we can minimize the steps we take to paint the whole board with same color.
+Problem hidden :)
 
 ## Solution
 Naive solution:
