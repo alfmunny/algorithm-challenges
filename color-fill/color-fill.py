@@ -156,6 +156,6 @@ class BoardSolutionTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-# Let's run some the unit tests
+# Let's run some unit tests
   unittest.main(verbosity=2)
 
