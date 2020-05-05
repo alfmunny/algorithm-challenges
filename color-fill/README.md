@@ -1,12 +1,14 @@
 # Color Fill
 
+## Problem
 We have a board of N * N, a set of colors M.
 
 Every time you can pick a new color from M to paint on the origin at index [0][0], the color will flood the tiles, which have the same color as the color of the origin.
 
 How we can minimize the steps we take to paint the whole board with same color.
 
-Naive solution: Greedy Solution
+## Solution
+Naive solution:
 
 1. Pick a color
 2. Do DFS from the origin with that color, count out the max tiles. Repeat step 1 until all color has been tried.
@@ -17,7 +19,8 @@ Possible improvements:
 
 - Step 2 can be optimized: 
   - We can remember the 'front line' of the painted region, and do DFS from the line, not always from the origin. 
-  - How can we draw the 'font line' of the region faster
+  - We can only pick the color which are adjusted to the front line
+  - How can we draw the font line of the region faster
 
 ## Run 
 
