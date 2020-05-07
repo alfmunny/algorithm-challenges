@@ -32,3 +32,11 @@ test_play (__main__.BoardSolutionTest) ... ok
 ----------------------------------------------------------------------
 Ran 3 tests in 0.014s
 ```
+
+## A small application
+
+I wrote a application to demonstrate this problem.
+
+[Color Flood Fill](http://alfmunny.com/algorithm-challenges/color-fill/)
+
+
