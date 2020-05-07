@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <div style='width: 100%; text-align: center' >
+    <div style='display: inline-block'>
+      <h1>Color Flood Fill</h1>
+      <canvas id=mycancas width=500 height=500 style='border:1px #000 solid'></canvas>
+      <h2 id="pending" style="color:red"></h2>
+      <h3>Click in the grid to solve</h3>
+      <p>
+        <label for="colorSelect">Colors</label>
+        <select stype='width: 20px' id='colors' name="colorSelect" onchange="setNumColor()">
+          <option>2</option>
+          <option>3</option>
+          <option selected="selected">4</option>
+          <option>5</option>
+          <option>7</option>
+          <option>8</option>
+        </select>
+      </p>
+
+      <p>
+        <label for="dimensionSelect">Dimensions</label>
+        <select stype='width: 20px' id='dimensions' name="dimensionSelect" onchange="setNumDimension()">
+          <option>5</option>
+          <option selected="selected">10</option>
+          <option>20</option>
+          <option>25</option>
+          <option>50</option>
+        </select>
+      </p>
+      <p>Your Moves: <span id="moves">0</span></p>
+      <p>Optimized Steps: <span id="auto-moves">0</span></p>
+
+      <button id="solve-step" onclick="solveStep()">Step</button>
+      <button id="solve-all" onclick="solveSlow()">Solve All</button>
+      <button id="reset" onclick="reset()">Reset</button>
+    </div>
+  </div>
+<script
+  src="https://code.jquery.com/jquery-3.5.1.min.js"
+  integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+  crossorigin="anonymous"></script>
+
+<script>
+  let CANVAS = $("#mycancas");
+  let CTX = CANVAS.get(0).getContext("2d");
+  let WIDTH = CANVAS.width();
+  let HEIGHT = CANVAS.height();
+
+  let DIMENSION = 10;
+  let PIXELSIZE = WIDTH / DIMENSION;
+  let BOARD = []
+
+  CTX.strokeStyle = 'rgba(0,0,0,0.1)';
+
+  let COLORS = [
+    '#273AE1',
+    '#AF7AC5',
+    '#5499C7',
+    '#48C9B0',
+    '#F4D03F',
+    '#E43725',
+    '#99A3A4',
+    '#6F5048',
+  ];
+
+  let nColor = 4;
+  let maxTiles = 0;
+  let memo = createMemo();
+  let moves = 0;
+  let computerSolution = 0;
+  let computerMoves = 0;
+  let frontier = [[0,0]];
+
+  CANVAS.on('touchstart mousedown', nextStepMouse);
+
+  reset();
+
+  function reset() 
+  {
+    BOARD = []
+    PIXELSIZE = WIDTH / DIMENSION;
+    for (let i = 0; i < DIMENSION; ++i)
+    {
+      BOARD[i] = new Array(DIMENSION);
+    }
+    CTX.clearRect(0, 0, WIDTH, HEIGHT);
+    fillGrid(nColor);
+    solve().then((response) => {
+      let steps = response;
+      recoverCanas();
+      moves = 0;
+      computerMoves = 0;
+      maxTiles = 0;
+      memo = createMemo();
+      frontier = [[0,0]]
+      document.getElementById("auto-moves").innerText = steps.toString();
+      document.getElementById("moves").innerText = moves.toString();
+    });
+  }
+  
+  function mouseFill(e) {
+    let offsetX = e.offsetX;
+    let offsetY = e.offsetY;
+
+    if (e.which != 1) return;
+    fillGrid(8);
+  }
+
+  function fillPixel(pixel, color) {
+    CTX.fillStyle = color;
+    CTX.fillRect(pixel[0] * PIXELSIZE, pixel[1] * PIXELSIZE, PIXELSIZE - 1, PIXELSIZE - 1);
+  }
+
+  function fillGrid(nColor) {
+    CTX.clearRect(0, 0, WIDTH, HEIGHT);
+    for (let i = 0; i < DIMENSION; ++i) {
+      for (let j = 0; j < DIMENSION; ++j) {
+        color = COLORS[Math.floor(Math.random() * nColor)];
+        fillPixel([i, j], color);
+        BOARD[i][j] = color;
+      }
+    }
+  }
+
+  function recoverCanas() {
+    for (let i = 0; i < DIMENSION; ++i) {
+      for (let j = 0; j < DIMENSION; ++j) {
+        fillPixel([i, j], BOARD[i][j]);
+      }
+    }
+  }
+
+  function solveSlow() {
+    i = computerMoves;
+
+    setPending()
+    if (maxTiles == DIMENSION * DIMENSION) {
+      unsetPending()
+      return 
+    }
+
+    const interval = setInterval(function() {
+      if (i < computerSolution) {
+        solveStep();
+        ++i;
+        if ( i == computerSolution ) {
+          document.getElementById("pending").innerText = "Complete!";
+        }
+      } else
+      {
+        unsetPending()
+        window.clearInterval(interval);
+      }
+    }, 1000)
+
+  }
+
+  async function solve() {
+    computerSolution = 0;
+    maxTiles = 0;
+
+    setPending();
+
+    while(maxTiles < DIMENSION * DIMENSION)
+    {
+      solveStep()
+    }
+
+    unsetPending();
+
+    computerSolution = computerMoves;
+    return computerSolution;
+  }
+
+  function setPending() {
+    document.getElementById("solve-all").disabled = true;
+    document.getElementById("solve-step").disabled = true;
+    document.getElementById("reset").disabled = true;
+  }
+
+  function unsetPending() {
+    document.getElementById("pending").innerText = "";
+    document.getElementById("solve-all").disabled = false;
+    document.getElementById("solve-step").disabled = false;
+    document.getElementById("reset").disabled =  false;
+  }
+
+
+  function solveStep() {
+    origin = [0, 0];
+    if (maxTiles == DIMENSION * DIMENSION)
+      return
+
+    var newColor = COLORS[0];
+    
+    for (let i = 0; i < nColor; ++i) 
+    {
+      currentMaxTiles = maxTiles;
+      maxTiles = 0;
+      memo = createMemo();
+      var originalColor = getColorPixel(origin);
+      var choosenColor = COLORS[i];
+
+      if ( originalColor == choosenColor)
+        continue;
+
+      dfs(origin, originalColor, choosenColor);
+      if (maxTiles > currentMaxTiles)
+      {
+        currentMaxTiles = maxTiles
+        newColor = choosenColor;
+      }
+      if (maxTiles == DIMENSION * DIMENSION)
+        break
+    }
+    maxTiles = currentMaxTiles
+    ++computerMoves;
+    memo = createMemo();
+    flood(origin, originalColor, newColor);
+    document.getElementById("auto-moves").innerText = computerMoves.toString() + "/" + computerSolution.toString();
+  }
+
+  function setNumColor() {
+    nColor = document.getElementById("colors").value;
+    reset();
+  }
+  
+  function setNumDimension() {
+    DIMENSION = document.getElementById("dimensions").value;
+    reset();
+  }
+
+  function dfs(pixel, oColor, color) {
+
+    var x = pixel[0];
+    var y = pixel[1];
+    if (y >= DIMENSION || x >= DIMENSION || y < 0 || x < 0 || memo[x][y] == 1)
+    {
+      return;
+    }
+
+    var currentColor = getColorPixel(pixel);
+
+    if (currentColor == oColor || currentColor == color) {
+      if (currentColor == color)
+        {
+          oColor = color;
+        }
+      ++maxTiles;
+      memo[x][y] = 1;
+      dfs([x-1, y], oColor, color);
+      dfs([x, y-1], oColor, color);
+      dfs([x, y+1], oColor, color);
+      dfs([x+1, y], oColor, color);
+    } 
+  }
+
+  function flood(pixel, oColor, color) {
+    var x = pixel[0];
+    var y = pixel[1];
+    
+    if (y >= DIMENSION || x >= DIMENSION || y < 0 || x < 0 || getColorPixel(pixel) == color)
+    {
+      return;
+    }
+
+    if (getColorPixel(pixel) == oColor) {
+      fillPixel([x, y], color);
+      memo[x][y] = 1;
+      flood([x-1, y], oColor, color);
+      flood([x, y-1], oColor, color);
+      flood([x, y+1], oColor, color);
+      flood([x+1, y], oColor, color);
+    } 
+  }
+
+  function createMemo() {
+    var matrix = [];
+    for (var i = 0; i < DIMENSION; ++i)
+      matrix[i] = new Array(DIMENSION);
+    return matrix;
+  }
+
+  function nextStepMouse(e) {
+    var offsetX = e.offsetX;
+    var offsetY = e.offsetY;
+    var color = getColorPosition(offsetX, offsetY);
+    if (color == "#000000" || color == getColorPosition(0, 0))
+      return null;
+    else {
+      memo = createMemo();
+      ++moves;
+      flood([0, 0], getColorPixel([0, 0]), color);
+     
+      document.getElementById("moves").innerText = moves.toString();
+      return color;
+    }
+  }
+
+  function getColorPixel(pixel) {
+    var offsetX = pixel[0] * PIXELSIZE;
+    var offsetY = pixel[1] * PIXELSIZE;
+    return getColorPosition(offsetX, offsetY);
+  }
+
+  function getColorPosition(x, y) {
+    var p = CTX.getImageData(x, y, 1, 1).data;
+    var hex = "#" + ("000000" + rgbToHex(p[0], p[1], p[2])).slice(-6).toUpperCase();
+    return hex;
+  }
+
+  function rgbToHex(r, g, b) {
+    if (r > 255 || g > 255 || b > 255)
+        throw "Invalid color component";
+    return ((r << 16) | (g << 8) | b).toString(16);
+  }
+</script>
+
+
+</body>
+</html>
+
