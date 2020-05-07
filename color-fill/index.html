@@ -6,8 +6,7 @@
       <h1>Color Flood Fill</h1>
       <canvas id=mycancas width=500 height=500 style='border:1px #000 solid'></canvas>
       <h2 id="pending" style="color:red"></h2>
-      <h3>Click in the grid to solve</h3>
-      <p>
+      <h3>Click in the grid to solve</h3> 
         <label for="colorSelect">Colors</label>
         <select stype='width: 20px' id='colors' name="colorSelect" onchange="setNumColor()">
           <option>2</option>
@@ -17,9 +16,7 @@
           <option>7</option>
           <option>8</option>
         </select>
-      </p>
 
-      <p>
         <label for="dimensionSelect">Dimensions</label>
         <select stype='width: 20px' id='dimensions' name="dimensionSelect" onchange="setNumDimension()">
           <option>5</option>
@@ -28,13 +25,15 @@
           <option>25</option>
           <option>50</option>
         </select>
-      </p>
-      <p>Your Moves: <span id="moves">0</span></p>
-      <p>Optimized Steps: <span id="auto-moves">0</span></p>
 
-      <button id="solve-step" onclick="solveStep()">Step</button>
+        <button id="reset" onclick="reset()">Reset Board</button>
+      <p>Your Moves: <span id="moves">0</span></p>
+
+      <h3>Try Computer's Algorithm</h3>
+      <p>Optimized Steps: <span id="auto-moves">0</span></p>
+      <button id="solve-step" onclick="solveStep()">Solve One Step</button>
       <button id="solve-all" onclick="solveSlow()">Solve All</button>
-      <button id="reset" onclick="reset()">Reset</button>
+      <label>Animation speed</label><input id="speed" type="range" min="1" max="100" value="95" onchange="changeSpeed()">
     </div>
   </div>
 <script
@@ -49,6 +48,7 @@
   let HEIGHT = CANVAS.height();
 
   let DIMENSION = 10;
+  let SPEED = (100 - document.getElementById("speed").value) / 100 * 3000;
   let PIXELSIZE = WIDTH / DIMENSION;
   let BOARD = []
 
@@ -71,7 +71,7 @@
   let moves = 0;
   let computerSolution = 0;
   let computerMoves = 0;
-  let frontier = [[0,0]];
+
 
   CANVAS.on('touchstart mousedown', nextStepMouse);
 
@@ -87,17 +87,27 @@
     }
     CTX.clearRect(0, 0, WIDTH, HEIGHT);
     fillGrid(nColor);
-    solve().then((response) => {
-      let steps = response;
-      recoverCanas();
-      moves = 0;
-      computerMoves = 0;
-      maxTiles = 0;
-      memo = createMemo();
-      frontier = [[0,0]]
-      document.getElementById("auto-moves").innerText = steps.toString();
-      document.getElementById("moves").innerText = moves.toString();
-    });
+    document.getElementById("pending").innerText = "";
+    if (DIMENSION == 50) {
+      document.getElementById("auto-moves").innerText = "Calculating... huge dimensions";
+    }
+    else {
+      document.getElementById("auto-moves").innerText = "Calculating... wait some seconds";
+    }
+
+    setTimeout(function() {
+      solve().then((response) => {
+        let steps = response;
+        recoverCanas();
+        moves = 0;
+        computerMoves = 0;
+        maxTiles = 0;
+        memo = createMemo();
+        document.getElementById("auto-moves").innerText = steps.toString();
+        document.getElementById("moves").innerText = moves.toString();
+      });
+    }, 1);
+
   }
   
   function mouseFill(e) {
@@ -153,11 +163,12 @@
         unsetPending()
         window.clearInterval(interval);
       }
-    }, 1000)
+    }, SPEED)
 
   }
 
   async function solve() {
+    computerMoves = 0;
     computerSolution = 0;
     maxTiles = 0;
 
@@ -175,13 +186,14 @@
   }
 
   function setPending() {
+    document.getElementById("speed").disabled = true;
     document.getElementById("solve-all").disabled = true;
     document.getElementById("solve-step").disabled = true;
     document.getElementById("reset").disabled = true;
   }
 
   function unsetPending() {
-    document.getElementById("pending").innerText = "";
+    document.getElementById("speed").disabled = false;
     document.getElementById("solve-all").disabled = false;
     document.getElementById("solve-step").disabled = false;
     document.getElementById("reset").disabled =  false;
@@ -230,6 +242,10 @@
   function setNumDimension() {
     DIMENSION = document.getElementById("dimensions").value;
     reset();
+  }
+
+  function changeSpeed() {
+    SPEED = (100 - document.getElementById("speed").value) / 100 * 3000;
   }
 
   function dfs(pixel, oColor, color) {
