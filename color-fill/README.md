@@ -1,6 +1,13 @@
 # Color Fill
 
-Problem hidden :)
+Given a board filled with colors.
+Pick a color to flood the board from upper-left corner. What is the minimum steps do you need?
+
+## Demo
+
+I wrote a simple web application with JavaScript to demonstrate this problem. Feel free to play with it.
+
+[Color Flood Fill](http://alfmunny.com/algorithm-challenges/color-fill/)
 
 ## Solution
 Naive solution:
@@ -33,8 +40,3 @@ test_play (__main__.BoardSolutionTest) ... ok
 Ran 3 tests in 0.014s
 ```
 
-## Demo
-
-I wrote a simple web application to demonstrate this problem. Feel free to play with it.
-
-[Color Flood Fill](http://alfmunny.com/algorithm-challenges/color-fill/)

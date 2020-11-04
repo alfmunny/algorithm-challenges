@@ -4,6 +4,7 @@
   <div style='width: 100%; text-align: center' >
     <div style='display: inline-block'>
       <h1>Color Flood Fill</h1>
+      <p>Pick a color to flood the board from left corner. What is the minimum steps do you need? <a href="https://github.com/alfmunny/algorithm-challenges/tree/master/color-fill">Code on Github</a></p>
       <canvas id=mycancas width=500 height=500 style='border:1px #000 solid'></canvas>
       <h2 id="pending" style="color:red"></h2>
       <h3>Click in the grid to solve</h3> 
@@ -90,22 +91,22 @@
     fillGrid(nColor);
     document.getElementById("pending").innerText = "";
     if (DIMENSION == 50) {
-      document.getElementById("auto-moves").innerText = "Calculating... huge dimensions";
+      document.getElementById("auto-moves").innerText = "Calculating... huge dimensions. Please wait for seconds";
     }
     else {
       document.getElementById("auto-moves").innerText = "Calculating... wait some seconds";
     }
+
     setTimeout(function() {
       solve().then((response) => {
         let steps = response;
         moves = 0;
         computerMoves = 0;
         maxTiles = 0;
-        console.log("HAHAHAHA");
         recoverCanas();
         memo = createMemo();
-        document.getElementById("auto-moves").innerText = steps.toString();
-        document.getElementById("moves").innerText = moves.toString();
+        updateMoves();
+        updateAutoMoves();
       });
     }, 1);
 
@@ -141,7 +142,18 @@
     computerMoves = 0;
     maxTiles = 0;
     document.getElementById("pending").innerText = "";
+    updateMoves();
+    updateAutoMoves();
   }
+
+  function updateMoves() {
+    document.getElementById("moves").innerText = moves.toString();
+  }
+
+  function updateAutoMoves() {
+    document.getElementById("auto-moves").innerText = computerMoves.toString() + "/" + computerSolution.toString();
+  }
+
   function recoverCanas() {
     for (let i = 0; i < DIMENSION; ++i) {
       for (let j = 0; j < DIMENSION; ++j) {
@@ -151,6 +163,9 @@
   }
 
   function solveSlow() {
+    if (moves > 0) {
+        recoverBoard()
+    }
     i = computerMoves;
 
     setPending()
@@ -181,7 +196,7 @@
     maxTiles = 0;
 
     setPending();
-    console.log(maxTiles);
+    // console.log(maxTiles);
 
     while(maxTiles < DIMENSION * DIMENSION)
     {
@@ -223,7 +238,8 @@
     maxTiles = currentMaxTiles;
     ++computerMoves;
     flood(origin, originalColor, newColor);
-    document.getElementById("auto-moves").innerText = computerMoves.toString() + "/" + computerSolution.toString();
+    //document.getElementById("auto-moves").innerText = computerMoves.toString() + "/" + computerSolution.toString();
+    updateAutoMoves();
   }
 
   function dfs(pixel, oColor, color) {
@@ -280,7 +296,8 @@
       ++moves;
       flood([0, 0], getColorPixel([0, 0]), color);
      
-      document.getElementById("moves").innerText = moves.toString();
+      //document.getElementById("moves").innerText = moves.toString();
+      updateMoves();
       return color;
     }
   }
@@ -322,6 +339,7 @@
     document.getElementById("solve-all").disabled = true;
     document.getElementById("solve-step").disabled = true;
     document.getElementById("reset").disabled = true;
+    document.getElementById("recover").disabled = true;
   }
 
   function unsetPending() {
@@ -329,6 +347,7 @@
     document.getElementById("solve-all").disabled = false;
     document.getElementById("solve-step").disabled = false;
     document.getElementById("reset").disabled =  false;
+    document.getElementById("recover").disabled = false;
   }
 </script>
 </body>
